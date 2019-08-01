@@ -105,3 +105,4 @@ venv.bak/
 
 history.json
 history.txt
+auth.py
