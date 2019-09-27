@@ -1,2 +1,2 @@
-bearer = None
+authorization = None
 cookie = None

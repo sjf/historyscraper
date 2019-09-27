@@ -71,6 +71,7 @@ def summary(data):
 def main():
   if auth.authorization == None or auth.cookie == None:
     log("Copy the cookie and authorization fields from the request in Chrome into auth.py")
+    return
   history = get_all()
   save(history)
   summary(history)
