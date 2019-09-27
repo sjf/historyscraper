@@ -8,6 +8,7 @@ from contextlib import closing
 import jsonpath_rw
 import re
 import json
+import auth
 
 def log(*args):
   date = datetime.now().strftime("%Y-%m-%d %H:%M:%S ")
@@ -68,6 +69,8 @@ def summary(data):
   print("Saved feedback for %d interviews" % len(summaries))
 
 def main():
+  if auth.authorization == None or auth.cookie == None:
+    log("Copy the cookie and authorization fields from the request in Chrome into auth.py")
   history = get_all()
   save(history)
   summary(history)

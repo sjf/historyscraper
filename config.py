@@ -6,7 +6,7 @@ QUERY_PARAMS = {"after":""}
 
 HEADERS = {
     'cookie': auth.cookie,
-    'authorization': auth.bearer,
+    'authorization': auth.authorization,
     'authority': "start.interviewing.io",
     'accept': "application/json, text/plain, */*",
     'cache-control': "no-cache",

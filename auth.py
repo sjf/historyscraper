@@ -1,0 +1,2 @@
+bearer = None
+cookie = None
