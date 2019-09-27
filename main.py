@@ -53,8 +53,6 @@ def get_all():
     print()
     result['interviews'].extend(content['interviews'])
     mx -= 1
-  # remove last two interviews
-  result['interviews'] = result['interviews'][:-2]
   return result
 
 def save(data):
@@ -66,7 +64,7 @@ def summary(data):
   with open('history.txt', 'w') as outfile:
     for summary in summaries:
       outfile.write(summary)
-      outfile.write('----------------------------------------------------')
+      outfile.write('\n----------------------------------------------------\n')
   print("Saved feedback for %d interviews" % len(summaries))
 
 def main():
