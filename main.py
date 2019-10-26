@@ -10,17 +10,106 @@ import re
 import json
 import auth
 
+_session = None
+
 def log(*args):
   date = datetime.now().strftime("%Y-%m-%d %H:%M:%S ")
   print(date + " ".join(map(str, args)))
 
-def get(url, headers, query_params):
+def get_session():
+  global _session
+  if _session is not None:
+    return _session
+  _session = requests.Session()
+  _session.headers = config.HEADERS.copy()
+  token = read_token()
+  if token:
+    setup_token(token)
+  return _session
+
+def setup_token(token):
+  cookie = requests.cookies.create_cookie(
+    domain='start.interviewing.io', name='token', value=token, path='/', secure=True)
+  get_session().cookies.set_cookie(cookie)
+  get_session().headers['authorization'] = "Bearer " + token
+
+def authenticate():
+  email, password = get_login_details()
+  resp = post(config.LOGIN, {'email': email, 'password': password})
+  token = None
+  if resp:
+    response = json.loads(resp)
+    if 'token' in response:
+      token = response['token']
+  if not token:
+    log("Could not login")
+    sys.exit(1)
+  write_token(token)
+  write_login_details(email, password)
+  setup_token(token)
+
+def read_token():
+  try:
+    with open(config.TOKEN) as file:
+      return file.read().strip()
+  except Exception as e:
+    return None
+
+def write_token(token):
+  with open(config.TOKEN, 'w') as file:
+    file.write(token)
+
+def get_login_details():
+  email,password = read_login_details()
+  if email and password:
+    return email, password
+  email = input('Email: ')
+  password = input('Password: ')
+  return email, password
+
+def read_login_details():
+  try:
+    with open(config.AUTH) as file:
+      email = file.readline().strip()
+      password = file.readline().strip()
+      if email and password:
+        return email,password
+  except Exception as e:
+    return None,None
+
+def write_login_details(email, password):
+  with open(config.AUTH, 'w') as file:
+    file.write(email + '\n')
+    file.write(password + '\n')
+
+def get(url, query_params, retry=True):
   """ Returns the contents of the URL. If there is an error it is logged and None is returned. """
   try:
     log("Making request to {0}".format(url))
-    with closing(requests.request("GET", url, headers=headers, params=query_params)) as response:
+    with closing(get_session().get(url, params=query_params)) as response:
       if not is_ok(response):
-        log("Request failed, code: {0} {1}".format(response.status_code, response.headers))
+        if response.status_code == 401:
+          if retry:
+            authenticate()
+            return get(url, query_params, retry=False)
+          else:
+            log("Authentication failed: {0} {1}".format(response.status_code, response.headers))
+        else:
+          log("Request failed, code: {0} {1}".format(response.status_code, response.headers))
+        return None
+      log("Request successful, code: {0}".format(response.status_code))
+      return response.content
+  except RequestException as e:
+    log("Request for '{0}' unsuccessful: {1}".format(url, str(e)))
+    return None
+
+def post(url, body_json):
+  try:
+    log("Making request to {0}".format(url))
+    with closing(get_session().post(url, json=body_json)) as response:
+      if not is_ok(response):
+        log("Request failed, code: {0} {1}\n{2}".format(
+          response.status_code, response.headers, str(response.content, 'utf-8')))
         return None
       log("Request successful, code: {0}".format(response.status_code))
       return response.content
@@ -30,8 +119,7 @@ def get(url, headers, query_params):
 
 def is_ok(response):
   content_type = response.headers['Content-Type'].lower()
-  return (response.status_code == 200
-          and content_type is not None)
+  return (response.status_code == 200 and content_type is not None)
 
 def get_all():
   result = {'interviews':[]}
@@ -42,7 +130,7 @@ def get_all():
     if after:
       params['after'] = after
 
-    res = get(config.URL, config.HEADERS, params)
+    res = get(config.URL, params)
     if not res:
       break
     content = json.loads(res)
@@ -69,9 +157,6 @@ def summary(data):
   print("Saved feedback for %d interviews" % len(summaries))
 
 def main():
-  if auth.authorization == None or auth.cookie == None:
-    log("Copy the cookie and authorization fields from the request in Chrome into auth.py")
-    return
   history = get_all()
   save(history)
   summary(history)

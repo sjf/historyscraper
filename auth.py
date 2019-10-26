@@ -1,2 +1,0 @@
-authorization = None
-cookie = None
