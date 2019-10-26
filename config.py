@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import auth
 LOGIN = "https://start.interviewing.io/auth/local"
 URL = "https://start.interviewing.io/api/interviews"
 TOKEN = ".token.txt"

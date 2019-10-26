@@ -8,7 +8,6 @@ from contextlib import closing
 import jsonpath_rw
 import re
 import json
-import auth
 
 _session = None
 
