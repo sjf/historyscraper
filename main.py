@@ -34,10 +34,10 @@ def setup_token(token):
 
 def authenticate():
   email, password = get_login_details()
-  resp = post(config.LOGIN, {'email': email, 'password': password})
+  log("Logging in")
+  response = post(config.LOGIN, {'email': email, 'password': password})
   token = None
-  if resp:
-    response = json.loads(resp)
+  if response:
     if 'token' in response:
       token = response['token']
   if not token:
@@ -97,7 +97,7 @@ def get(url, query_params, retry=True):
           log("Request failed, code: {0} {1}".format(response.status_code, response.headers))
         return None
       log("Request successful, code: {0}".format(response.status_code))
-      return response.content
+      return response.json()
   except RequestException as e:
     log("Request for '{0}' unsuccessful: {1}".format(url, str(e)))
     return None
@@ -111,7 +111,7 @@ def post(url, body_json):
           response.status_code, response.headers, str(response.content, 'utf-8')))
         return None
       log("Request successful, code: {0}".format(response.status_code))
-      return response.content
+      return response.json()
   except RequestException as e:
     log("Request for '{0}' unsuccessful: {1}".format(url, str(e)))
     return None
@@ -129,10 +129,9 @@ def get_all():
     if after:
       params['after'] = after
 
-    res = get(config.URL, params)
-    if not res:
+    content = get(config.URL, params)
+    if not content:
       break
-    content = json.loads(res)
 
     after = content['nextAfter']
     interviews = content['interviews']
