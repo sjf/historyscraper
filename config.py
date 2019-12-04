@@ -3,6 +3,7 @@ LOGIN = "https://start.interviewing.io/auth/local"
 URL = "https://start.interviewing.io/api/interviews"
 TOKEN = ".token.txt"
 AUTH = ".auth.txt"
+PSUEDONYM = None
 
 HEADERS = {
     'Accept': "application/json, text/plain, */*",

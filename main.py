@@ -5,7 +5,6 @@ from datetime import datetime
 import requests
 from requests.exceptions import RequestException
 from contextlib import closing
-import jsonpath_rw
 import re
 import json
 
@@ -147,7 +146,16 @@ def save(data):
     json.dump(data, outfile)
 
 def summary(data):
-  summaries = [match.value for match in jsonpath_rw.parse('$.interviews[*].interviewer.review.summary').find(data)]
+  summaries = []
+  for interview in data['interviews']:
+    if config.PSUEDONYM and interview['interviewer']['pseudonym'] != config.PSUEDONYM:
+      # skip interviews where you were the interviewee.
+      continue
+    if 'review' not in interview['interviewer']:
+      # No feedback yet.
+      continue
+    summaries.append(interview['interviewer']['review']['summary'])
+
   with open('history.txt', 'w') as outfile:
     for summary in summaries:
       outfile.write(summary)
