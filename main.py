@@ -36,8 +36,7 @@ def authenticate():
   log("Logging in")
   response = post(config.LOGIN, {'email': email, 'password': password})
   token = None
-  if response:
-    if 'token' in response:
+  if response and 'token' in response:
       token = response['token']
   if not token:
     log("Could not login")
@@ -95,7 +94,7 @@ def get(url, query_params, retry=True):
         else:
           log("Request failed, code: {0} {1}".format(response.status_code, response.headers))
         return None
-      log("Request successful, code: {0}".format(response.status_code))
+      #log("Request successful, code: {0}".format(response.status_code))
       return response.json()
   except RequestException as e:
     log("Request for '{0}' unsuccessful: {1}".format(url, str(e)))
@@ -134,8 +133,8 @@ def get_all():
 
     after = content['nextAfter']
     interviews = content['interviews']
-    print("total count: %d, next after: %s, # interviews: %d" % (content['totalCount'],
-      after, len(interviews)))
+    log("total count: %d, received: %d, next after: %s"
+      % (content['totalCount'], len(interviews), after))
     print()
     result['interviews'].extend(content['interviews'])
     mx -= 1
@@ -147,12 +146,14 @@ def save(data):
 
 def summary(data):
   summaries = []
+  need_feedback = 0
   for interview in data['interviews']:
     if config.PSUEDONYM and interview['interviewer']['pseudonym'] != config.PSUEDONYM:
       # skip interviews where you were the interviewee.
       continue
     if 'review' not in interview['interviewer']:
       # No feedback yet.
+      need_feedback += 1
       continue
     summaries.append(interview['interviewer']['review']['summary'])
 
@@ -160,7 +161,7 @@ def summary(data):
     for summary in summaries:
       outfile.write(summary)
       outfile.write('\n----------------------------------------------------\n')
-  print("Saved feedback for %d interviews" % len(summaries))
+  print("Saved feedback for %d interviews%s" % (len(summaries), ", " + str(need_feedback) + " need feedback" if need_feedback else ""))
 
 def main():
   history = get_all()
